@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: medicalcare-electronic-application
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5432/medicalcare_db
+    username: medicalcare_user
+    password: medicalcare_password
+    driver-class-name: org.postgresql.Driver
+    
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        
+  security:
+    user:
+      name: admin
+      password: admin123
+      
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+  
+logging:
+  level:
+    com.medicalcare: DEBUG
+    org.seasar.doma: DEBUG
+    org.springframework.security: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+      
+# JWT設定
+jwt:
+  secret: medicalcare-secret-key-2024
+  expiration: 86400000 # 24時間
+
+# ファイルアップロード設定
+file:
+  upload:
+    max-size: 10MB
+    allowed-types: pdf,doc,docx,jpg,jpeg,png
+    upload-dir: ./uploads 
