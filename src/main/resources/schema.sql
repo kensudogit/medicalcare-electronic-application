@@ -24,10 +24,10 @@ CREATE TABLE medical_institutions (
     institution_name VARCHAR(200) NOT NULL,
     institution_type VARCHAR(50) NOT NULL,
     address TEXT,
-    phone_number VARCHAR(20),
+    phone VARCHAR(20),
     email VARCHAR(100),
-    contact_person VARCHAR(100),
-    is_active BOOLEAN DEFAULT true,
+    representative_name VARCHAR(100),
+    license_number VARCHAR(100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -146,7 +146,6 @@ CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_users_is_active ON users(is_active);
 
 CREATE INDEX idx_medical_institutions_institution_code ON medical_institutions(institution_code);
-CREATE INDEX idx_medical_institutions_is_active ON medical_institutions(is_active);
 
 CREATE INDEX idx_applications_application_number ON applications(application_number);
 CREATE INDEX idx_applications_medical_institution_id ON applications(medical_institution_id);
