@@ -1,27 +1,42 @@
-FROM openjdk:17-jdk-slim
+# バックエンド用Dockerfile - Spring Bootアプリケーションのコンテナ化設定
 
+# ベースイメージ - Eclipse Temurin JDK 17
+FROM eclipse-temurin:17-jdk
+
+# 作業ディレクトリの設定
 WORKDIR /app
 
-# Copy gradle files
+# システムパッケージの更新とwgetのインストール
+RUN apt-get update && apt-get install -y wget curl
+
+# 必要なファイルをコピー
 COPY gradlew .
 COPY gradle gradle
 COPY build.gradle .
 COPY gradle.properties .
-
-# Make gradlew executable
-RUN chmod +x ./gradlew
-
-# Download dependencies
-RUN ./gradlew dependencies --no-daemon
-
-# Copy source code
 COPY src src
 
-# Build the application
+# gradle-wrapper.jarをダウンロードして配置
+RUN wget -O gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/v8.5.0/gradle/wrapper/gradle-wrapper.jar
+
+# Gradleラッパーに実行権限を付与
+RUN chmod +x ./gradlew
+
+# 依存関係のダウンロードとビルド
 RUN ./gradlew build --no-daemon
 
-# Expose port
+# 不要なパッケージを削除
+RUN apt-get remove -y wget curl && apt-get autoremove -y && apt-get clean
+
+# アップロードディレクトリの作成
+RUN mkdir -p /app/uploads
+
+# ポートの公開設定
 EXPOSE 8080
 
-# Run the application
-CMD ["./gradlew", "bootRun"] 
+# 環境変数の設定
+ENV SPRING_PROFILES_ACTIVE=docker
+ENV JAVA_OPTS="-Xmx512m -Xms256m"
+
+# アプリケーション起動コマンド（改善版）
+CMD ["./gradlew", "bootRun", "--no-daemon", "--stacktrace"] 

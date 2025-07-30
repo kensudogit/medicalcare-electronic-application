@@ -1,0 +1,46 @@
+# Git関連
+.git
+.gitignore
+
+# IDE関連
+.idea
+.vscode
+*.iml
+
+# OS関連
+.DS_Store
+Thumbs.db
+
+# ログファイル
+*.log
+
+# 一時ファイル
+*.tmp
+*.temp
+
+# ビルド成果物
+build/
+target/
+.next/
+node_modules/
+
+# テスト関連
+src/test/
+
+# ドキュメント
+*.md
+docs/
+
+# Docker関連
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# その他
+.env
+.env.local
+.env.production
+
+# フロントエンド関連
+frontend/
+uploads/ 

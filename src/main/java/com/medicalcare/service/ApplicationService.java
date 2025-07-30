@@ -2,255 +2,208 @@ package com.medicalcare.service;
 
 import com.medicalcare.domain.dao.ApplicationDao;
 import com.medicalcare.domain.entity.Application;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
-/**
- * 申請サービス
- */
 @Service
-@Transactional
 public class ApplicationService {
+    
+    @Autowired
+    private ApplicationDao applicationDao;
 
-    private final ApplicationDao applicationDao;
-
-    public ApplicationService(ApplicationDao applicationDao) {
-        this.applicationDao = applicationDao;
+    /**
+     * 全申請取得
+     */
+    public List<Application> getAllApplications() {
+        return applicationDao.findAll();
     }
 
     /**
-     * 全申請を取得
+     * IDによる申請取得
      */
-    @Transactional(readOnly = true)
-    public List<Application> findAll() {
-        return applicationDao.selectAll();
+    public Optional<Application> getApplicationById(Long id) {
+        return applicationDao.findById(id);
     }
 
     /**
-     * IDで申請を取得
+     * 申請番号による申請取得
      */
-    @Transactional(readOnly = true)
-    public Optional<Application> findById(Long id) {
-        return applicationDao.selectById(id);
+    public Optional<Application> getApplicationByNumber(String applicationNumber) {
+        return applicationDao.findByApplicationNumber(applicationNumber);
     }
 
     /**
-     * 申請番号で申請を取得
+     * 医療機関IDによる申請一覧取得
      */
-    @Transactional(readOnly = true)
-    public Optional<Application> findByApplicationNumber(String applicationNumber) {
-        return applicationDao.selectByApplicationNumber(applicationNumber);
+    public List<Application> getApplicationsByInstitutionId(Long institutionId) {
+        return applicationDao.findByMedicalInstitutionId(institutionId);
     }
 
     /**
-     * 医療機関IDで申請を取得
+     * ステータスによる申請一覧取得
      */
-    @Transactional(readOnly = true)
-    public List<Application> findByInstitutionId(Long institutionId) {
-        return applicationDao.selectByInstitutionId(institutionId);
+    public List<Application> getApplicationsByStatus(String status) {
+        return applicationDao.findByStatus(status);
     }
 
     /**
-     * ステータスで申請を取得
+     * 申請タイプによる申請一覧取得
      */
-    @Transactional(readOnly = true)
-    public List<Application> findByStatus(String status) {
-        return applicationDao.selectByStatus(status);
+    public List<Application> getApplicationsByType(Long applicationTypeId) {
+        return applicationDao.findByApplicationTypeId(applicationTypeId);
     }
 
     /**
-     * 申請タイプで申請を取得
+     * 申請作成
      */
-    @Transactional(readOnly = true)
-    public List<Application> findByApplicationType(String applicationType) {
-        return applicationDao.selectByApplicationType(applicationType);
-    }
-
-    /**
-     * 申請を登録
-     */
-    public Application create(Application application) {
-        LocalDateTime now = LocalDateTime.now();
-        String applicationNumber = generateApplicationNumber();
+    public Application createApplication(String applicationNumber, Long medicalInstitutionId, 
+                                       Long applicationTypeId, String title, String description) {
+        // 申請番号の重複チェック
+        if (applicationDao.existsByApplicationNumber(applicationNumber)) {
+            throw new RuntimeException("申請番号が既に使用されています: " + applicationNumber);
+        }
         
-        Application newApplication = new Application(
-                null,
-                applicationNumber,
-                application.getInstitutionId(),
-                application.getApplicationType(),
-                application.getTitle(),
-                application.getDescription(),
-                "DRAFT",
-                null,
-                null,
-                null,
-                null,
-                now,
-                now,
-                1L
-        );
+        Application newApplication = new Application(applicationNumber, medicalInstitutionId, applicationTypeId, title);
+        newApplication.setDescription(description);
+        newApplication.setStatus("DRAFT");
+        newApplication.setCreatedAt(LocalDateTime.now());
         
-        applicationDao.insert(newApplication);
-        return newApplication;
+        return applicationDao.save(newApplication);
     }
 
     /**
-     * 申請を更新
+     * 申請更新
      */
-    public Application update(Long id, Application application) {
-        Optional<Application> existing = applicationDao.selectById(id);
-        if (existing.isEmpty()) {
-            throw new RuntimeException("Application not found: " + id);
-        }
-
-        Application current = existing.get();
-        Application updated = new Application(
-                current.getId(),
+    public Application updateApplication(Long id, String title, String description) {
+        Optional<Application> existing = applicationDao.findById(id);
+        if (existing.isPresent()) {
+            Application current = existing.get();
+            
+            Application updated = new Application(
                 current.getApplicationNumber(),
-                application.getInstitutionId(),
-                application.getApplicationType(),
-                application.getTitle(),
-                application.getDescription(),
-                application.getStatus(),
-                application.getSubmittedAt(),
-                application.getApprovedAt(),
-                application.getRejectedAt(),
-                application.getRejectionReason(),
-                current.getCreatedAt(),
-                LocalDateTime.now(),
-                current.getVersion() + 1
-        );
-
-        applicationDao.update(updated);
-        return updated;
+                current.getMedicalInstitutionId(),
+                current.getApplicationTypeId(),
+                title
+            );
+            updated.setId(current.getId());
+            updated.setDescription(description);
+            updated.setStatus(current.getStatus());
+            updated.setSubmittedAt(current.getSubmittedAt());
+            updated.setApprovedAt(current.getApprovedAt());
+            updated.setRejectedAt(current.getRejectedAt());
+            updated.setRejectionReason(current.getRejectionReason());
+            updated.setCreatedAt(current.getCreatedAt());
+            updated.setUpdatedAt(LocalDateTime.now());
+            
+            return applicationDao.save(updated);
+        } else {
+            throw new RuntimeException("申請が見つかりません: " + id);
+        }
     }
 
     /**
-     * 申請を削除
+     * 申請削除
      */
-    public void delete(Long id) {
-        Optional<Application> existing = applicationDao.selectById(id);
-        if (existing.isEmpty()) {
-            throw new RuntimeException("Application not found: " + id);
+    public void deleteApplication(Long id) {
+        Optional<Application> existing = applicationDao.findById(id);
+        if (existing.isPresent()) {
+            applicationDao.delete(existing.get());
+        } else {
+            throw new RuntimeException("申請が見つかりません: " + id);
         }
-
-        applicationDao.delete(existing.get());
     }
 
     /**
-     * 申請を提出
+     * 申請提出
      */
-    public Application submit(Long id) {
-        Optional<Application> existing = applicationDao.selectById(id);
-        if (existing.isEmpty()) {
-            throw new RuntimeException("Application not found: " + id);
-        }
-
-        Application current = existing.get();
-        if (!"DRAFT".equals(current.getStatus())) {
-            throw new RuntimeException("Application is not in DRAFT status");
-        }
-
-        Application submitted = new Application(
-                current.getId(),
+    public Application submitApplication(Long id) {
+        Optional<Application> existing = applicationDao.findById(id);
+        if (existing.isPresent()) {
+            Application current = existing.get();
+            
+            Application submitted = new Application(
                 current.getApplicationNumber(),
-                current.getInstitutionId(),
-                current.getApplicationType(),
-                current.getTitle(),
-                current.getDescription(),
-                "SUBMITTED",
-                LocalDateTime.now(),
-                null,
-                null,
-                null,
-                current.getCreatedAt(),
-                LocalDateTime.now(),
-                current.getVersion() + 1
-        );
-
-        applicationDao.update(submitted);
-        return submitted;
+                current.getMedicalInstitutionId(),
+                current.getApplicationTypeId(),
+                current.getTitle()
+            );
+            submitted.setId(current.getId());
+            submitted.setDescription(current.getDescription());
+            submitted.setStatus("SUBMITTED");
+            submitted.setSubmittedAt(LocalDateTime.now());
+            submitted.setApprovedAt(current.getApprovedAt());
+            submitted.setRejectedAt(current.getRejectedAt());
+            submitted.setRejectionReason(current.getRejectionReason());
+            submitted.setCreatedAt(current.getCreatedAt());
+            submitted.setUpdatedAt(LocalDateTime.now());
+            
+            return applicationDao.save(submitted);
+        } else {
+            throw new RuntimeException("申請が見つかりません: " + id);
+        }
     }
 
     /**
-     * 申請を承認
+     * 申請承認
      */
-    public Application approve(Long id) {
-        Optional<Application> existing = applicationDao.selectById(id);
-        if (existing.isEmpty()) {
-            throw new RuntimeException("Application not found: " + id);
-        }
-
-        Application current = existing.get();
-        if (!"SUBMITTED".equals(current.getStatus())) {
-            throw new RuntimeException("Application is not in SUBMITTED status");
-        }
-
-        Application approved = new Application(
-                current.getId(),
+    public Application approveApplication(Long id) {
+        Optional<Application> existing = applicationDao.findById(id);
+        if (existing.isPresent()) {
+            Application current = existing.get();
+            
+            Application approved = new Application(
                 current.getApplicationNumber(),
-                current.getInstitutionId(),
-                current.getApplicationType(),
-                current.getTitle(),
-                current.getDescription(),
-                "APPROVED",
-                current.getSubmittedAt(),
-                LocalDateTime.now(),
-                null,
-                null,
-                current.getCreatedAt(),
-                LocalDateTime.now(),
-                current.getVersion() + 1
-        );
-
-        applicationDao.update(approved);
-        return approved;
+                current.getMedicalInstitutionId(),
+                current.getApplicationTypeId(),
+                current.getTitle()
+            );
+            approved.setId(current.getId());
+            approved.setDescription(current.getDescription());
+            approved.setStatus("APPROVED");
+            approved.setSubmittedAt(current.getSubmittedAt());
+            approved.setApprovedAt(LocalDateTime.now());
+            approved.setRejectedAt(current.getRejectedAt());
+            approved.setRejectionReason(current.getRejectionReason());
+            approved.setCreatedAt(current.getCreatedAt());
+            approved.setUpdatedAt(LocalDateTime.now());
+            
+            return applicationDao.save(approved);
+        } else {
+            throw new RuntimeException("申請が見つかりません: " + id);
+        }
     }
 
     /**
-     * 申請を却下
+     * 申請却下
      */
-    public Application reject(Long id, String rejectionReason) {
-        Optional<Application> existing = applicationDao.selectById(id);
-        if (existing.isEmpty()) {
-            throw new RuntimeException("Application not found: " + id);
-        }
-
-        Application current = existing.get();
-        if (!"SUBMITTED".equals(current.getStatus())) {
-            throw new RuntimeException("Application is not in SUBMITTED status");
-        }
-
-        Application rejected = new Application(
-                current.getId(),
+    public Application rejectApplication(Long id, String rejectionReason) {
+        Optional<Application> existing = applicationDao.findById(id);
+        if (existing.isPresent()) {
+            Application current = existing.get();
+            
+            Application rejected = new Application(
                 current.getApplicationNumber(),
-                current.getInstitutionId(),
-                current.getApplicationType(),
-                current.getTitle(),
-                current.getDescription(),
-                "REJECTED",
-                current.getSubmittedAt(),
-                null,
-                LocalDateTime.now(),
-                rejectionReason,
-                current.getCreatedAt(),
-                LocalDateTime.now(),
-                current.getVersion() + 1
-        );
-
-        applicationDao.update(rejected);
-        return rejected;
-    }
-
-    /**
-     * 申請番号を生成
-     */
-    private String generateApplicationNumber() {
-        return "APP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+                current.getMedicalInstitutionId(),
+                current.getApplicationTypeId(),
+                current.getTitle()
+            );
+            rejected.setId(current.getId());
+            rejected.setDescription(current.getDescription());
+            rejected.setStatus("REJECTED");
+            rejected.setSubmittedAt(current.getSubmittedAt());
+            rejected.setApprovedAt(current.getApprovedAt());
+            rejected.setRejectedAt(LocalDateTime.now());
+            rejected.setRejectionReason(rejectionReason);
+            rejected.setCreatedAt(current.getCreatedAt());
+            rejected.setUpdatedAt(LocalDateTime.now());
+            
+            return applicationDao.save(rejected);
+        } else {
+            throw new RuntimeException("申請が見つかりません: " + id);
+        }
     }
 } 

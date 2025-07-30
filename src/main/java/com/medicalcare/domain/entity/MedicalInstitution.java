@@ -1,105 +1,147 @@
 package com.medicalcare.domain.entity;
 
-import org.seasar.doma.Entity;
-import org.seasar.doma.Id;
-import org.seasar.doma.Table;
-import org.seasar.doma.GeneratedValue;
-import org.seasar.doma.GenerationType;
-import org.seasar.doma.Column;
-import org.seasar.doma.Version;
-
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
  * 医療機関エンティティ
  */
-@Entity(immutable = true)
+@Entity
 @Table(name = "medical_institutions")
 public class MedicalInstitution {
-
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private final Long id;
-
-    @Column(name = "institution_code")
-    private final String institutionCode;
-
-    @Column(name = "institution_name")
-    private final String institutionName;
-
-    @Column(name = "institution_type")
-    private final String institutionType;
-
+    private Long id;
+    
+    @Column(name = "institution_code", unique = true, nullable = false)
+    private String institutionCode;
+    
+    @Column(name = "institution_name", nullable = false)
+    private String institutionName;
+    
+    @Column(name = "institution_type", nullable = false)
+    private String institutionType;
+    
     @Column(name = "address")
-    private final String address;
-
+    private String address;
+    
     @Column(name = "phone")
-    private final String phone;
-
+    private String phone;
+    
     @Column(name = "email")
-    private final String email;
-
+    private String email;
+    
     @Column(name = "representative_name")
-    private final String representativeName;
-
+    private String representativeName;
+    
     @Column(name = "license_number")
-    private final String licenseNumber;
-
-    @Column(name = "status")
-    private final String status;
-
-    @Column(name = "created_at")
-    private final LocalDateTime createdAt;
-
+    private String licenseNumber;
+    
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+    
     @Column(name = "updated_at")
-    private final LocalDateTime updatedAt;
+    private LocalDateTime updatedAt;
 
-    @Version
-    @Column(name = "version")
-    private final Long version;
+    // デフォルトコンストラクタ
+    public MedicalInstitution() {}
 
-    public MedicalInstitution(
-            Long id,
-            String institutionCode,
-            String institutionName,
-            String institutionType,
-            String address,
-            String phone,
-            String email,
-            String representativeName,
-            String licenseNumber,
-            String status,
-            LocalDateTime createdAt,
-            LocalDateTime updatedAt,
-            Long version) {
-        this.id = id;
+    // コンストラクタ
+    public MedicalInstitution(String institutionCode, String institutionName, String institutionType) {
         this.institutionCode = institutionCode;
         this.institutionName = institutionName;
         this.institutionType = institutionType;
-        this.address = address;
-        this.phone = phone;
-        this.email = email;
-        this.representativeName = representativeName;
-        this.licenseNumber = licenseNumber;
-        this.status = status;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.version = version;
+        this.createdAt = LocalDateTime.now();
     }
 
-    // Getters
-    public Long getId() { return id; }
-    public String getInstitutionCode() { return institutionCode; }
-    public String getInstitutionName() { return institutionName; }
-    public String getInstitutionType() { return institutionType; }
-    public String getAddress() { return address; }
-    public String getPhone() { return phone; }
-    public String getEmail() { return email; }
-    public String getRepresentativeName() { return representativeName; }
-    public String getLicenseNumber() { return licenseNumber; }
-    public String getStatus() { return status; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public Long getVersion() { return version; }
+    // Getter and Setter methods
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getInstitutionCode() {
+        return institutionCode;
+    }
+
+    public void setInstitutionCode(String institutionCode) {
+        this.institutionCode = institutionCode;
+    }
+
+    public String getInstitutionName() {
+        return institutionName;
+    }
+
+    public void setInstitutionName(String institutionName) {
+        this.institutionName = institutionName;
+    }
+
+    public String getInstitutionType() {
+        return institutionType;
+    }
+
+    public void setInstitutionType(String institutionType) {
+        this.institutionType = institutionType;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getRepresentativeName() {
+        return representativeName;
+    }
+
+    public void setRepresentativeName(String representativeName) {
+        this.representativeName = representativeName;
+    }
+
+    public String getLicenseNumber() {
+        return licenseNumber;
+    }
+
+    public void setLicenseNumber(String licenseNumber) {
+        this.licenseNumber = licenseNumber;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 } 

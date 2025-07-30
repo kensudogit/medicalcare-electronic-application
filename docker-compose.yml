@@ -1,57 +1,69 @@
-version: '3.8'
+# Docker Compose設定ファイル - 医療系電子申請システムの全体環境構築
 
 services:
-  # PostgreSQL Database
+  # PostgreSQLデータベースサービス
   postgres:
-    image: postgres:15
-    container_name: medicalcare-postgres
+    image: postgres:15  # PostgreSQL 15イメージ
+    container_name: medicalcare-postgres  # コンテナ名
     environment:
-      POSTGRES_DB: medicalcare_db
-      POSTGRES_USER: medicalcare_user
-      POSTGRES_PASSWORD: medicalcare_password
+      POSTGRES_DB: medicalcare_db  # データベース名
+      POSTGRES_USER: medicalcare_user  # ユーザー名
+      POSTGRES_PASSWORD: medicalcare_password  # パスワード
     ports:
-      - "5432:5432"
+      - "5432:5432"  # ポートマッピング（ホスト:コンテナ）
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - postgres_data:/var/lib/postgresql/data  # データ永続化
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/schema.sql  # 初期化SQL
     networks:
-      - medicalcare-network
+      - medicalcare-network  # ネットワーク設定
 
-  # Spring Boot Backend
+  # Spring Bootバックエンドサービス
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile.backend
-    container_name: medicalcare-backend
+      context: .  # ビルドコンテキスト
+      dockerfile: Dockerfile.backend  # 使用するDockerfile
+      no_cache: true  # キャッシュを使用しない
+    container_name: medicalcare-backend  # コンテナ名
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/medicalcare_db
-      SPRING_DATASOURCE_USERNAME: medicalcare_user
-      SPRING_DATASOURCE_PASSWORD: medicalcare_password
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/medicalcare_db  # データベース接続URL
+      SPRING_DATASOURCE_USERNAME: medicalcare_user  # データベースユーザー名
+      SPRING_DATASOURCE_PASSWORD: medicalcare_password  # データベースパスワード
+      SPRING_PROFILES_ACTIVE: docker  # Docker環境用プロファイル
+      JAVA_OPTS: "-Xmx512m -Xms256m"  # JVMオプション
     ports:
-      - "8080:8080"
+      - "8080:8080"  # ポートマッピング（ホスト:コンテナ）
     depends_on:
-      - postgres
+      - postgres  # PostgreSQL起動後に起動
     networks:
-      - medicalcare-network
+      - medicalcare-network  # ネットワーク設定
+    volumes:
+      - ./uploads:/app/uploads  # ファイルアップロード用ボリューム
+    restart: unless-stopped  # コンテナ再起動ポリシー
 
-  # Next.js Frontend
+  # Next.jsフロントエンドサービス
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: medicalcare-frontend
-    ports:
-      - "3000:3000"
+      context: ./frontend  # フロントエンドディレクトリをビルドコンテキストに設定
+      dockerfile: Dockerfile  # フロントエンド用Dockerfile
+      no_cache: true  # キャッシュを使用しない
+    container_name: medicalcare-frontend  # コンテナ名
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8080/api
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080/api  # バックエンドAPIのベースURL
+      NODE_ENV: production  # 本番環境設定
+      NEXT_TELEMETRY_DISABLED: 1  # Next.jsテレメトリを無効化
+    ports:
+      - "3000:3000"  # ポートマッピング（ホスト:コンテナ）
     depends_on:
-      - backend
+      - backend  # バックエンド起動後に起動
     networks:
-      - medicalcare-network
+      - medicalcare-network  # ネットワーク設定
+    restart: unless-stopped  # コンテナ再起動ポリシー
 
+# ボリューム定義 - データの永続化
 volumes:
-  postgres_data:
+  postgres_data:  # PostgreSQLデータ用ボリューム
 
+# ネットワーク定義 - サービス間通信
 networks:
-  medicalcare-network:
-    driver: bridge 
+  medicalcare-network:  # カスタムネットワーク
+    driver: bridge  # ブリッジドライバー 

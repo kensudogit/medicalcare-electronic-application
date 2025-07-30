@@ -8,6 +8,7 @@ import {
   TrashIcon 
 } from '@heroicons/react/24/outline';
 
+// 医療機関データの型定義
 interface MedicalInstitution {
   id: number;
   institutionCode: string;
@@ -23,17 +24,21 @@ interface MedicalInstitution {
   updatedAt: string;
 }
 
+// 医療機関管理ページコンポーネント - 医療機関のCRUD操作を提供
 export default function InstitutionsPage() {
+  // 状態管理
   const [institutions, setInstitutions] = useState<MedicalInstitution[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingInstitution, setEditingInstitution] = useState<MedicalInstitution | null>(null);
 
+  // コンポーネントマウント時に医療機関データを取得
   useEffect(() => {
     fetchInstitutions();
   }, []);
 
+  // 医療機関データの取得処理
   const fetchInstitutions = async () => {
     try {
       const response = await fetch('/api/medical-institutions');
@@ -48,16 +53,19 @@ export default function InstitutionsPage() {
     }
   };
 
+  // 検索フィルタリング処理 - 機関名またはコードで検索
   const filteredInstitutions = institutions.filter(institution =>
     institution.institutionName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     institution.institutionCode.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // 編集モードの開始処理
   const handleEdit = (institution: MedicalInstitution) => {
     setEditingInstitution(institution);
     setShowModal(true);
   };
 
+  // 医療機関の削除処理
   const handleDelete = async (id: number) => {
     if (confirm('この医療機関を削除しますか？')) {
       try {
@@ -73,6 +81,7 @@ export default function InstitutionsPage() {
     }
   };
 
+  // フォーム送信処理 - 新規登録または更新
   const handleSubmit = async (formData: FormData) => {
     const institutionData = {
       institutionCode: formData.get('institutionCode') as string,
@@ -110,6 +119,7 @@ export default function InstitutionsPage() {
     }
   };
 
+  // ローディング状態の表示
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -121,6 +131,7 @@ export default function InstitutionsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        {/* ページヘッダー */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">医療機関管理</h1>
           <p className="mt-2 text-gray-600">
@@ -128,7 +139,7 @@ export default function InstitutionsPage() {
           </p>
         </div>
 
-        {/* Search and Add */}
+        {/* 検索と新規登録ボタン */}
         <div className="mb-6 flex justify-between items-center">
           <div className="relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -149,7 +160,7 @@ export default function InstitutionsPage() {
           </button>
         </div>
 
-        {/* Institutions Table */}
+        {/* 医療機関一覧テーブル */}
         <div className="card">
           <div className="overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
@@ -201,12 +212,14 @@ export default function InstitutionsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
+                        {/* 編集ボタン */}
                         <button
                           onClick={() => handleEdit(institution)}
                           className="text-primary-600 hover:text-primary-900"
                         >
                           <PencilIcon className="h-4 w-4" />
                         </button>
+                        {/* 削除ボタン */}
                         <button
                           onClick={() => handleDelete(institution.id)}
                           className="text-red-600 hover:text-red-900"
@@ -222,7 +235,7 @@ export default function InstitutionsPage() {
           </div>
         </div>
 
-        {/* Modal */}
+        {/* モーダル - 新規登録・編集フォーム */}
         {showModal && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
@@ -235,6 +248,7 @@ export default function InstitutionsPage() {
                   handleSubmit(new FormData(e.currentTarget));
                 }}>
                   <div className="space-y-4">
+                    {/* 機関コード入力フィールド */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
                         機関コード
@@ -247,6 +261,7 @@ export default function InstitutionsPage() {
                         required
                       />
                     </div>
+                    {/* 機関名入力フィールド */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
                         機関名
@@ -259,6 +274,7 @@ export default function InstitutionsPage() {
                         required
                       />
                     </div>
+                    {/* 機関種別選択フィールド */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
                         種別
@@ -276,6 +292,7 @@ export default function InstitutionsPage() {
                         <option value="診療所">診療所</option>
                       </select>
                     </div>
+                    {/* 住所入力フィールド */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
                         住所
@@ -288,6 +305,7 @@ export default function InstitutionsPage() {
                         required
                       />
                     </div>
+                    {/* 電話番号入力フィールド */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
                         電話番号
@@ -299,6 +317,7 @@ export default function InstitutionsPage() {
                         className="input-field"
                       />
                     </div>
+                    {/* メールアドレス入力フィールド */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
                         メールアドレス
@@ -310,6 +329,7 @@ export default function InstitutionsPage() {
                         className="input-field"
                       />
                     </div>
+                    {/* 代表者名入力フィールド */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
                         代表者名
@@ -322,6 +342,7 @@ export default function InstitutionsPage() {
                         required
                       />
                     </div>
+                    {/* 許可番号入力フィールド */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
                         許可番号
@@ -335,6 +356,7 @@ export default function InstitutionsPage() {
                       />
                     </div>
                   </div>
+                  {/* フォーム操作ボタン */}
                   <div className="mt-6 flex justify-end space-x-3">
                     <button
                       type="button"

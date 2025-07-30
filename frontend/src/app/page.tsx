@@ -9,9 +9,12 @@ import {
   ChartBarIcon 
 } from '@heroicons/react/24/outline';
 
+// ホームページコンポーネント - ダッシュボード機能を提供
 export default function HomePage() {
+  // アクティブなタブの状態管理
   const [activeTab, setActiveTab] = useState('dashboard');
 
+  // ナビゲーションメニューの定義
   const navigation = [
     { name: 'ダッシュボード', href: '#', icon: ChartBarIcon, current: activeTab === 'dashboard' },
     { name: '医療機関管理', href: '/institutions', icon: BuildingOfficeIcon, current: activeTab === 'institutions' },
@@ -19,6 +22,7 @@ export default function HomePage() {
     { name: 'ユーザー管理', href: '#', icon: UserGroupIcon, current: activeTab === 'users' },
   ];
 
+  // 統計データの定義 - ダッシュボード表示用
   const stats = [
     { name: '登録医療機関数', value: '1,234', change: '+12%', changeType: 'positive' },
     { name: '申請件数（今月）', value: '567', change: '+8%', changeType: 'positive' },
@@ -28,7 +32,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* ヘッダー部分 - システムタイトルとログアウトボタン */}
       <header className="bg-white shadow">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 justify-between">
@@ -50,7 +54,7 @@ export default function HomePage() {
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex gap-6 py-6">
-          {/* Sidebar */}
+          {/* サイドバー - ナビゲーションメニュー */}
           <div className="w-64">
             <nav className="space-y-1">
               {navigation.map((item) => (
@@ -76,8 +80,9 @@ export default function HomePage() {
             </nav>
           </div>
 
-          {/* Main content */}
+          {/* メインコンテンツエリア */}
           <div className="flex-1">
+            {/* ページタイトルと説明 */}
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-gray-900">ダッシュボード</h2>
               <p className="mt-1 text-sm text-gray-500">
@@ -85,7 +90,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* Stats */}
+            {/* 統計カード - システム概要の表示 */}
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {stats.map((item) => (
                 <div key={item.name} className="card">
@@ -100,7 +105,7 @@ export default function HomePage() {
               ))}
             </div>
 
-            {/* Recent Applications */}
+            {/* 最近の申請テーブル - 最新申請の一覧表示 */}
             <div className="mt-8">
               <h3 className="text-lg font-medium text-gray-900 mb-4">最近の申請</h3>
               <div className="card">
@@ -126,6 +131,7 @@ export default function HomePage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
+                      {/* サンプルデータ - 申請1 */}
                       <tr>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           APP-12345678
@@ -145,6 +151,7 @@ export default function HomePage() {
                           2024-01-15
                         </td>
                       </tr>
+                      {/* サンプルデータ - 申請2 */}
                       <tr>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           APP-87654321

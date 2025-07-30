@@ -1,70 +1,64 @@
+// Gradleプラグインの設定
 plugins {
-    id 'java'
-    id 'org.springframework.boot' version '3.2.0'
-    id 'io.spring.dependency-management' version '1.1.4'
-    id 'org.seasar.doma' version '1.7.0'
+    id 'java'  // Javaプラグイン
+    id 'org.springframework.boot' version '3.2.0'  // Spring Bootプラグイン
+    id 'io.spring.dependency-management' version '1.1.4'  // Spring依存関係管理プラグイン
 }
 
+// プロジェクト基本情報
 group = 'com.medicalcare'
 version = '0.0.1-SNAPSHOT'
 
+// Javaバージョン設定
 java {
-    sourceCompatibility = '17'
+    sourceCompatibility = '17'  // Java 17を使用
 }
 
+// コンパイル設定
 configurations {
     compileOnly {
-        extendsFrom annotationProcessor
+        extendsFrom annotationProcessor  // アノテーションプロセッサー設定
     }
 }
 
+// Mavenリポジトリ設定
 repositories {
-    mavenCentral()
+    mavenCentral()  // Maven Centralリポジトリを使用
 }
 
+// 依存関係の定義
 dependencies {
-    // Spring Boot
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    // Spring Boot関連ライブラリ
+    implementation 'org.springframework.boot:spring-boot-starter-web'  // Webアプリケーション用
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'  // JPA用
+    implementation 'org.springframework.boot:spring-boot-starter-security'  // セキュリティ用
+    implementation 'org.springframework.boot:spring-boot-starter-validation'  // バリデーション用
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'  // 監視・管理用
     
-    // Database
-    implementation 'org.postgresql:postgresql'
-    implementation 'org.seasar.doma:doma-core:2.54.0'
-    implementation 'org.seasar.doma:doma-slf4j:2.54.0'
+    // データベース関連ライブラリ
+    implementation 'org.postgresql:postgresql'  // PostgreSQLドライバー
     
-    // JWT
-    implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
-    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
-    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+    // JWT認証関連ライブラリ
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.3'  // JWT API
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'  // JWT実装
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'  // JWT Jackson連携
     
-    // Utilities
-    implementation 'org.apache.commons:commons-lang3:3.12.0'
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    // ユーティリティライブラリ
+    implementation 'org.apache.commons:commons-lang3:3.12.0'  // Apache Commons Lang
+    implementation 'com.fasterxml.jackson.core:jackson-databind'  // JSON処理
     
-    // Development
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-    annotationProcessor 'org.seasar.doma:doma-processor:2.54.0'
+    // 開発用ライブラリ
+    compileOnly 'org.projectlombok:lombok'  // Lombok（ボイラープレート削減）
+    annotationProcessor 'org.projectlombok:lombok'  // Lombokアノテーションプロセッサー
     
-    // Test
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.security:spring-security-test'
-    testImplementation 'org.testcontainers:postgresql:1.19.3'
-    testImplementation 'org.testcontainers:junit-jupiter:1.19.3'
+    // テスト用ライブラリ
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'  // Spring Bootテスト
+    testImplementation 'org.springframework.security:spring-security-test'  // Spring Securityテスト
+    testImplementation 'org.testcontainers:postgresql:1.19.3'  // PostgreSQLテストコンテナ
+    testImplementation 'org.testcontainers:junit-jupiter:1.19.3'  // TestContainers JUnit5
 }
 
+// テストタスク設定
 tasks.named('test') {
-    useJUnitPlatform()
-}
-
-// Doma2 configuration
-doma {
-    sqlDir = file('src/main/resources/META-INF/sql')
-    domainDir = file('src/main/java')
-    daoDir = file('src/main/java')
-    entityDir = file('src/main/java')
-    resourcesDir = file('src/main/resources')
+    useJUnitPlatform()  // JUnit 5プラットフォームを使用
 } 

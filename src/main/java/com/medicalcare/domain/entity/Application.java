@@ -1,111 +1,171 @@
 package com.medicalcare.domain.entity;
 
-import org.seasar.doma.Entity;
-import org.seasar.doma.Id;
-import org.seasar.doma.Table;
-import org.seasar.doma.GeneratedValue;
-import org.seasar.doma.GenerationType;
-import org.seasar.doma.Column;
-import org.seasar.doma.Version;
-
+import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
  * 申請エンティティ
  */
-@Entity(immutable = true)
+@Entity
 @Table(name = "applications")
 public class Application {
-
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private final Long id;
-
-    @Column(name = "application_number")
-    private final String applicationNumber;
-
-    @Column(name = "institution_id")
-    private final Long institutionId;
-
-    @Column(name = "application_type")
-    private final String applicationType;
-
-    @Column(name = "title")
-    private final String title;
-
-    @Column(name = "description")
-    private final String description;
-
-    @Column(name = "status")
-    private final String status;
-
+    private Long id;
+    
+    @Column(name = "application_number", unique = true, nullable = false)
+    private String applicationNumber;
+    
+    @Column(name = "medical_institution_id", nullable = false)
+    private Long medicalInstitutionId;
+    
+    @Column(name = "application_type_id", nullable = false)
+    private Long applicationTypeId;
+    
+    @Column(name = "title", nullable = false)
+    private String title;
+    
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+    
+    @Column(name = "status", nullable = false)
+    private String status;
+    
     @Column(name = "submitted_at")
-    private final LocalDateTime submittedAt;
-
+    private LocalDateTime submittedAt;
+    
     @Column(name = "approved_at")
-    private final LocalDateTime approvedAt;
-
+    private LocalDateTime approvedAt;
+    
     @Column(name = "rejected_at")
-    private final LocalDateTime rejectedAt;
-
-    @Column(name = "rejection_reason")
-    private final String rejectionReason;
-
-    @Column(name = "created_at")
-    private final LocalDateTime createdAt;
-
+    private LocalDateTime rejectedAt;
+    
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
+    
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+    
     @Column(name = "updated_at")
-    private final LocalDateTime updatedAt;
+    private LocalDateTime updatedAt;
 
-    @Version
-    @Column(name = "version")
-    private final Long version;
+    // デフォルトコンストラクタ
+    public Application() {}
 
-    public Application(
-            Long id,
-            String applicationNumber,
-            Long institutionId,
-            String applicationType,
-            String title,
-            String description,
-            String status,
-            LocalDateTime submittedAt,
-            LocalDateTime approvedAt,
-            LocalDateTime rejectedAt,
-            String rejectionReason,
-            LocalDateTime createdAt,
-            LocalDateTime updatedAt,
-            Long version) {
-        this.id = id;
+    // コンストラクタ
+    public Application(String applicationNumber, Long medicalInstitutionId, Long applicationTypeId, String title) {
         this.applicationNumber = applicationNumber;
-        this.institutionId = institutionId;
-        this.applicationType = applicationType;
+        this.medicalInstitutionId = medicalInstitutionId;
+        this.applicationTypeId = applicationTypeId;
         this.title = title;
-        this.description = description;
-        this.status = status;
-        this.submittedAt = submittedAt;
-        this.approvedAt = approvedAt;
-        this.rejectedAt = rejectedAt;
-        this.rejectionReason = rejectionReason;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.version = version;
+        this.status = "DRAFT";
+        this.createdAt = LocalDateTime.now();
     }
 
-    // Getters
-    public Long getId() { return id; }
-    public String getApplicationNumber() { return applicationNumber; }
-    public Long getInstitutionId() { return institutionId; }
-    public String getApplicationType() { return applicationType; }
-    public String getTitle() { return title; }
-    public String getDescription() { return description; }
-    public String getStatus() { return status; }
-    public LocalDateTime getSubmittedAt() { return submittedAt; }
-    public LocalDateTime getApprovedAt() { return approvedAt; }
-    public LocalDateTime getRejectedAt() { return rejectedAt; }
-    public String getRejectionReason() { return rejectionReason; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public Long getVersion() { return version; }
+    // Getter and Setter methods
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getApplicationNumber() {
+        return applicationNumber;
+    }
+
+    public void setApplicationNumber(String applicationNumber) {
+        this.applicationNumber = applicationNumber;
+    }
+
+    public Long getMedicalInstitutionId() {
+        return medicalInstitutionId;
+    }
+
+    public void setMedicalInstitutionId(Long medicalInstitutionId) {
+        this.medicalInstitutionId = medicalInstitutionId;
+    }
+
+    public Long getApplicationTypeId() {
+        return applicationTypeId;
+    }
+
+    public void setApplicationTypeId(Long applicationTypeId) {
+        this.applicationTypeId = applicationTypeId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getSubmittedAt() {
+        return submittedAt;
+    }
+
+    public void setSubmittedAt(LocalDateTime submittedAt) {
+        this.submittedAt = submittedAt;
+    }
+
+    public LocalDateTime getApprovedAt() {
+        return approvedAt;
+    }
+
+    public void setApprovedAt(LocalDateTime approvedAt) {
+        this.approvedAt = approvedAt;
+    }
+
+    public LocalDateTime getRejectedAt() {
+        return rejectedAt;
+    }
+
+    public void setRejectedAt(LocalDateTime rejectedAt) {
+        this.rejectedAt = rejectedAt;
+    }
+
+    public String getRejectionReason() {
+        return rejectionReason;
+    }
+
+    public void setRejectionReason(String rejectionReason) {
+        this.rejectionReason = rejectionReason;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 } 

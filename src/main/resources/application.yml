@@ -1,57 +1,64 @@
+# Spring Bootアプリケーション設定
 spring:
+  # アプリケーション名の設定
   application:
     name: medicalcare-electronic-application
   
+  # データベース接続設定
   datasource:
     url: jdbc:postgresql://localhost:5432/medicalcare_db
     username: medicalcare_user
     password: medicalcare_password
     driver-class-name: org.postgresql.Driver
     
+  # JPA設定
   jpa:
     hibernate:
-      ddl-auto: validate
-    show-sql: false
+      ddl-auto: validate  # スキーマ検証モード
+    show-sql: false  # SQLログ出力無効
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect  # PostgreSQL方言
+        format_sql: true  # SQLフォーマット有効
         
+  # セキュリティ設定
   security:
     user:
       name: admin
       password: admin123
       
+# サーバー設定
 server:
-  port: 8080
+  port: 8080  # サーバーポート
   servlet:
-    context-path: /api
+    context-path: /api  # APIコンテキストパス
   
+# ログ設定
 logging:
   level:
-    com.medicalcare: DEBUG
-    org.seasar.doma: DEBUG
-    org.springframework.security: DEBUG
+    com.medicalcare: DEBUG  # アプリケーションログレベル
+    org.springframework.security: DEBUG  # Spring Securityログレベル
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"  # ログ出力パターン
     
+# 管理エンドポイント設定
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics  # 公開エンドポイント
   endpoint:
     health:
-      show-details: when-authorized
+      show-details: when-authorized  # 認証済みユーザーのみ詳細表示
       
 # JWT設定
 jwt:
-  secret: medicalcare-secret-key-2024
-  expiration: 86400000 # 24時間
+  secret: medicalcare-secret-key-2024  # JWT署名用シークレットキー
+  expiration: 86400000  # トークン有効期限（24時間）
 
 # ファイルアップロード設定
 file:
   upload:
-    max-size: 10MB
-    allowed-types: pdf,doc,docx,jpg,jpeg,png
-    upload-dir: ./uploads 
+    max-size: 10MB  # 最大ファイルサイズ
+    allowed-types: pdf,doc,docx,jpg,jpeg,png  # 許可ファイル形式
+    upload-dir: ./uploads  # アップロードディレクトリ 

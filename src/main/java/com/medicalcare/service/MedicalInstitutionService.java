@@ -2,122 +2,108 @@ package com.medicalcare.service;
 
 import com.medicalcare.domain.dao.MedicalInstitutionDao;
 import com.medicalcare.domain.entity.MedicalInstitution;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * 医療機関サービス
- */
 @Service
-@Transactional
 public class MedicalInstitutionService {
+    
+    @Autowired
+    private MedicalInstitutionDao medicalInstitutionDao;
 
-    private final MedicalInstitutionDao medicalInstitutionDao;
-
-    public MedicalInstitutionService(MedicalInstitutionDao medicalInstitutionDao) {
-        this.medicalInstitutionDao = medicalInstitutionDao;
+    /**
+     * 全医療機関取得
+     */
+    public List<MedicalInstitution> getAllMedicalInstitutions() {
+        return medicalInstitutionDao.findAll();
     }
 
     /**
-     * 全医療機関を取得
+     * IDによる医療機関取得
      */
-    @Transactional(readOnly = true)
-    public List<MedicalInstitution> findAll() {
-        return medicalInstitutionDao.selectAll();
+    public Optional<MedicalInstitution> getMedicalInstitutionById(Long id) {
+        return medicalInstitutionDao.findById(id);
     }
 
     /**
-     * IDで医療機関を取得
+     * 機関コードによる医療機関取得
      */
-    @Transactional(readOnly = true)
-    public Optional<MedicalInstitution> findById(Long id) {
-        return medicalInstitutionDao.selectById(id);
+    public Optional<MedicalInstitution> getMedicalInstitutionByCode(String institutionCode) {
+        return medicalInstitutionDao.findByInstitutionCode(institutionCode);
     }
 
     /**
-     * 機関コードで医療機関を取得
+     * 機関種別による医療機関一覧取得
      */
-    @Transactional(readOnly = true)
-    public Optional<MedicalInstitution> findByInstitutionCode(String institutionCode) {
-        return medicalInstitutionDao.selectByInstitutionCode(institutionCode);
+    public List<MedicalInstitution> getMedicalInstitutionsByType(String institutionType) {
+        return medicalInstitutionDao.findByInstitutionType(institutionType);
     }
 
     /**
-     * ステータスで医療機関を取得
+     * 医療機関作成
      */
-    @Transactional(readOnly = true)
-    public List<MedicalInstitution> findByStatus(String status) {
-        return medicalInstitutionDao.selectByStatus(status);
-    }
-
-    /**
-     * 医療機関を登録
-     */
-    public MedicalInstitution create(MedicalInstitution medicalInstitution) {
-        LocalDateTime now = LocalDateTime.now();
-        MedicalInstitution newInstitution = new MedicalInstitution(
-                null,
-                medicalInstitution.getInstitutionCode(),
-                medicalInstitution.getInstitutionName(),
-                medicalInstitution.getInstitutionType(),
-                medicalInstitution.getAddress(),
-                medicalInstitution.getPhone(),
-                medicalInstitution.getEmail(),
-                medicalInstitution.getRepresentativeName(),
-                medicalInstitution.getLicenseNumber(),
-                "ACTIVE",
-                now,
-                now,
-                1L
-        );
+    public MedicalInstitution createMedicalInstitution(String institutionCode, String institutionName, 
+                                                      String institutionType, String address, String phone, 
+                                                      String email, String representativeName, String licenseNumber) {
+        // 機関コードの重複チェック
+        if (medicalInstitutionDao.existsByInstitutionCode(institutionCode)) {
+            throw new RuntimeException("機関コードが既に使用されています: " + institutionCode);
+        }
         
-        medicalInstitutionDao.insert(newInstitution);
-        return newInstitution;
+        MedicalInstitution newInstitution = new MedicalInstitution(institutionCode, institutionName, institutionType);
+        newInstitution.setAddress(address);
+        newInstitution.setPhone(phone);
+        newInstitution.setEmail(email);
+        newInstitution.setRepresentativeName(representativeName);
+        newInstitution.setLicenseNumber(licenseNumber);
+        newInstitution.setCreatedAt(LocalDateTime.now());
+        
+        return medicalInstitutionDao.save(newInstitution);
     }
 
     /**
-     * 医療機関を更新
+     * 医療機関更新
      */
-    public MedicalInstitution update(Long id, MedicalInstitution medicalInstitution) {
-        Optional<MedicalInstitution> existing = medicalInstitutionDao.selectById(id);
-        if (existing.isEmpty()) {
-            throw new RuntimeException("Medical institution not found: " + id);
+    public MedicalInstitution updateMedicalInstitution(Long id, String institutionName, String institutionType,
+                                                      String address, String phone, String email, 
+                                                      String representativeName, String licenseNumber) {
+        Optional<MedicalInstitution> existing = medicalInstitutionDao.findById(id);
+        if (existing.isPresent()) {
+            MedicalInstitution current = existing.get();
+            
+            MedicalInstitution updated = new MedicalInstitution(
+                current.getInstitutionCode(),
+                institutionName,
+                institutionType
+            );
+            updated.setId(current.getId());
+            updated.setAddress(address);
+            updated.setPhone(phone);
+            updated.setEmail(email);
+            updated.setRepresentativeName(representativeName);
+            updated.setLicenseNumber(licenseNumber);
+            updated.setCreatedAt(current.getCreatedAt());
+            updated.setUpdatedAt(LocalDateTime.now());
+            
+            return medicalInstitutionDao.save(updated);
+        } else {
+            throw new RuntimeException("医療機関が見つかりません: " + id);
         }
-
-        MedicalInstitution current = existing.get();
-        MedicalInstitution updated = new MedicalInstitution(
-                current.getId(),
-                medicalInstitution.getInstitutionCode(),
-                medicalInstitution.getInstitutionName(),
-                medicalInstitution.getInstitutionType(),
-                medicalInstitution.getAddress(),
-                medicalInstitution.getPhone(),
-                medicalInstitution.getEmail(),
-                medicalInstitution.getRepresentativeName(),
-                medicalInstitution.getLicenseNumber(),
-                medicalInstitution.getStatus(),
-                current.getCreatedAt(),
-                LocalDateTime.now(),
-                current.getVersion() + 1
-        );
-
-        medicalInstitutionDao.update(updated);
-        return updated;
     }
 
     /**
-     * 医療機関を削除
+     * 医療機関削除
      */
-    public void delete(Long id) {
-        Optional<MedicalInstitution> existing = medicalInstitutionDao.selectById(id);
-        if (existing.isEmpty()) {
-            throw new RuntimeException("Medical institution not found: " + id);
+    public void deleteMedicalInstitution(Long id) {
+        Optional<MedicalInstitution> existing = medicalInstitutionDao.findById(id);
+        if (existing.isPresent()) {
+            medicalInstitutionDao.delete(existing.get());
+        } else {
+            throw new RuntimeException("医療機関が見つかりません: " + id);
         }
-
-        medicalInstitutionDao.delete(existing.get());
     }
 } 
