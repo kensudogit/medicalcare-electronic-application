@@ -14,22 +14,17 @@ import java.util.Optional;
 public interface MedicalInstitutionDao extends JpaRepository<MedicalInstitution, Long> {
 
     /**
-     * 医療機関番号による検索
+     * 医療機関コードによる検索
      */
-    Optional<MedicalInstitution> findByInstitutionNumber(String institutionNumber);
+    Optional<MedicalInstitution> findByInstitutionCode(String institutionCode);
 
     /**
      * 医療機関名による検索（部分一致）
      */
-    List<MedicalInstitution> findByNameContaining(String name);
+    List<MedicalInstitution> findByInstitutionNameContaining(String name);
 
     /**
-     * 都道府県による検索
+     * 医療機関コードの存在確認
      */
-    List<MedicalInstitution> findByPrefecture(String prefecture);
-
-    /**
-     * 医療機関番号の存在確認
-     */
-    boolean existsByInstitutionNumber(String institutionNumber);
+    boolean existsByInstitutionCode(String institutionCode);
 }

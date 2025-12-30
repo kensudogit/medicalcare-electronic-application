@@ -109,10 +109,11 @@ services:
       - ./logs:/app/logs
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/actuator/health"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 5
+      start_period: 60s
     deploy:
       resources:
         limits:
@@ -131,12 +132,12 @@ services:
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: 1
       # Node.js性能最適化
-      NODE_OPTIONS: "--max-old-space-size=1024 --optimize-for-size"
+      NODE_OPTIONS: "--max-old-space-size=1024"
     ports:
-      - "3000:3000"
+      - "3001:3000"
     depends_on:
       backend:
-        condition: service_healthy
+        condition: service_started
     networks:
       - medicalcare-network
     restart: unless-stopped
@@ -167,11 +168,6 @@ services:
     networks:
       - medicalcare-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     deploy:
       resources:
         limits:

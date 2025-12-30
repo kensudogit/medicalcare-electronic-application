@@ -34,25 +34,21 @@ public class MedicalInstitutionService {
      * 医療機関コードによる取得
      */
     public Optional<MedicalInstitution> getMedicalInstitutionByCode(String institutionCode) {
-        return medicalInstitutionDao.findAll().stream()
-                .filter(inst -> institutionCode.equals(inst.getInstitutionCode()))
-                .findFirst();
+        return medicalInstitutionDao.findByInstitutionCode(institutionCode);
     }
 
     /**
-     * 医療機関番号による取得
+     * 医療機関番号による取得（エイリアス - コードで検索）
      */
     public Optional<MedicalInstitution> getMedicalInstitutionByNumber(String institutionNumber) {
-        return medicalInstitutionDao.findByInstitutionNumber(institutionNumber);
+        return medicalInstitutionDao.findByInstitutionCode(institutionNumber);
     }
 
     /**
      * 医療機関名による検索
      */
     public List<MedicalInstitution> searchMedicalInstitutionsByName(String name) {
-        return medicalInstitutionDao.findAll().stream()
-                .filter(inst -> inst.getInstitutionName() != null && inst.getInstitutionName().contains(name))
-                .collect(Collectors.toList());
+        return medicalInstitutionDao.findByInstitutionNameContaining(name);
     }
 
     /**
@@ -65,10 +61,12 @@ public class MedicalInstitutionService {
     }
 
     /**
-     * 都道府県による検索
+     * 都道府県による検索（住所から検索）
      */
     public List<MedicalInstitution> getMedicalInstitutionsByPrefecture(String prefecture) {
-        return medicalInstitutionDao.findByPrefecture(prefecture);
+        return medicalInstitutionDao.findAll().stream()
+                .filter(inst -> inst.getAddress() != null && inst.getAddress().contains(prefecture))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -78,8 +76,7 @@ public class MedicalInstitutionService {
             String institutionType, String address, String phone, String email, String representativeName,
             String licenseNumber) {
         // 医療機関コードの重複チェック
-        Optional<MedicalInstitution> existing = getMedicalInstitutionByCode(institutionCode);
-        if (existing.isPresent()) {
+        if (medicalInstitutionDao.existsByInstitutionCode(institutionCode)) {
             throw new RuntimeException("医療機関コードが既に使用されています: " + institutionCode);
         }
 
