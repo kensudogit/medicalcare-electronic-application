@@ -35,17 +35,30 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'  // バリデーション用
     implementation 'org.springframework.boot:spring-boot-starter-actuator'  // 監視・管理用
     
+    // キャッシュ関連ライブラリ
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'  // Redisキャッシュ
+    implementation 'org.springframework.boot:spring-boot-starter-cache'  // Spring Cache
+    
     // データベース関連ライブラリ
     implementation 'org.postgresql:postgresql'  // PostgreSQLドライバー
+    implementation 'com.zaxxer:HikariCP'  // 高性能コネクションプール
     
     // JWT認証関連ライブラリ
     implementation 'io.jsonwebtoken:jjwt-api:0.12.3'  // JWT API
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'  // JWT実装
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'  // JWT Jackson連携
     
+    // パフォーマンス監視・メトリクス
+    implementation 'io.micrometer:micrometer-registry-prometheus'  // Prometheusメトリクス
+    implementation 'io.micrometer:micrometer-core'  // Micrometer core
+    
     // ユーティリティライブラリ
     implementation 'org.apache.commons:commons-lang3:3.12.0'  // Apache Commons Lang
     implementation 'com.fasterxml.jackson.core:jackson-databind'  // JSON処理
+    implementation 'org.apache.commons:commons-pool2'  // Redis接続プール
+    
+    // 非同期処理・リアクティブ
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'  // WebFlux for reactive programming
     
     // 開発用ライブラリ
     compileOnly 'org.projectlombok:lombok'  // Lombok（ボイラープレート削減）
@@ -56,9 +69,30 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'  // Spring Securityテスト
     testImplementation 'org.testcontainers:postgresql:1.19.3'  // PostgreSQLテストコンテナ
     testImplementation 'org.testcontainers:junit-jupiter:1.19.3'  // TestContainers JUnit5
+    testImplementation 'org.testcontainers:redis:1.19.3'  // Redisテストコンテナ
 }
 
 // テストタスク設定
 tasks.named('test') {
     useJUnitPlatform()  // JUnit 5プラットフォームを使用
+}
+
+// ビルド最適化設定
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-parameters']
+}
+
+// JARファイル最適化
+jar {
+    enabled = false
+    archiveClassifier = ''
+}
+
+// Spring Boot JAR最適化
+bootJar {
+    archiveFileName = "${project.name}-${project.version}.jar"
+    layered {
+        enabled = true
+    }
 } 

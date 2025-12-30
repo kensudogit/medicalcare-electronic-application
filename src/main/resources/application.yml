@@ -21,12 +21,6 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect  # PostgreSQL方言
         format_sql: true  # SQLフォーマット有効
         
-  # セキュリティ設定
-  security:
-    user:
-      name: admin
-      password: admin123
-      
 # サーバー設定
 server:
   port: 8080  # サーバーポート

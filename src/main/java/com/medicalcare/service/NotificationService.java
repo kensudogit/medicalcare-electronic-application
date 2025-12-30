@@ -8,56 +8,22 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class NotificationService {
-    
+
     @Autowired
     private NotificationDao notificationDao;
 
     /**
      * 通知作成
      */
-    public Notification createNotification(Long userId, String title, String message, String notificationType) {
-        Notification notification = new Notification(userId, title, message, notificationType, "MEDIUM");
+    public Notification createNotification(Long userId, String title, String message, String type) {
+        Notification notification = new Notification(userId, title, message, type);
         notification.setCreatedAt(LocalDateTime.now());
-        
-        return notificationDao.save(notification);
-    }
+        notification.setUpdatedAt(LocalDateTime.now());
 
-    /**
-     * エンティティ関連の通知作成
-     */
-    public Notification createNotificationWithEntity(Long userId, String title, String message, 
-                                                   String notificationType, Long relatedEntityId, String relatedEntityType) {
-        Notification notification = new Notification(userId, title, message, notificationType, "MEDIUM");
-        notification.setRelatedEntityId(relatedEntityId);
-        notification.setRelatedEntityType(relatedEntityType);
-        notification.setCreatedAt(LocalDateTime.now());
-        
-        return notificationDao.save(notification);
-    }
-
-    /**
-     * 優先度付き通知作成
-     */
-    public Notification createPriorityNotification(Long userId, String title, String message, 
-                                                 String notificationType, String priority) {
-        Notification notification = new Notification(userId, title, message, notificationType, priority);
-        notification.setCreatedAt(LocalDateTime.now());
-        
-        return notificationDao.save(notification);
-    }
-
-    /**
-     * スケジュール通知作成
-     */
-    public Notification createScheduledNotification(Long userId, String title, String message, 
-                                                  String notificationType, LocalDateTime scheduledAt) {
-        Notification notification = new Notification(userId, title, message, notificationType, "MEDIUM");
-        notification.setScheduledAt(scheduledAt);
-        notification.setCreatedAt(LocalDateTime.now());
-        
         return notificationDao.save(notification);
     }
 
@@ -69,9 +35,8 @@ public class NotificationService {
         if (notificationOpt.isPresent()) {
             Notification notification = notificationOpt.get();
             notification.setRead(true);
-            notification.setReadAt(LocalDateTime.now());
             notification.setUpdatedAt(LocalDateTime.now());
-            
+
             return notificationDao.save(notification);
         } else {
             throw new RuntimeException("通知が見つかりません: " + notificationId);
@@ -108,56 +73,160 @@ public class NotificationService {
      * 期限切れ通知の削除
      */
     public void deleteExpiredNotifications() {
-        List<Notification> allNotifications = notificationDao.findAll();
         LocalDateTime now = LocalDateTime.now();
-        
+        List<Notification> allNotifications = notificationDao.findAll();
+
         for (Notification notification : allNotifications) {
-            if (notification.getExpiresAt() != null && notification.getExpiresAt().isBefore(now)) {
+            // 30日以上前の通知を削除
+            if (notification.getCreatedAt().plusDays(30).isBefore(now)) {
                 notificationDao.delete(notification);
             }
         }
     }
 
-    // 検索メソッド
+    /**
+     * ユーザーの通知取得
+     */
     public List<Notification> getUserNotifications(Long userId) {
         return notificationDao.findByUserId(userId);
     }
 
+    /**
+     * ユーザーの未読通知取得
+     */
     public List<Notification> getUserUnreadNotifications(Long userId) {
-        return notificationDao.findUnreadByUserId(userId);
+        return notificationDao.findByUserIdAndReadFalse(userId);
     }
 
+    /**
+     * タイプ別通知取得
+     */
+    public List<Notification> getNotificationsByType(String type) {
+        return notificationDao.findByType(type);
+    }
+
+    /**
+     * 全通知取得
+     */
+    public List<Notification> getAllNotifications() {
+        return notificationDao.findAll();
+    }
+
+    /**
+     * 通知IDによる取得
+     */
+    public Optional<Notification> getNotificationById(Long notificationId) {
+        return notificationDao.findById(notificationId);
+    }
+
+    /**
+     * ユーザーIDとステータスによる通知取得
+     */
+    public List<Notification> getNotificationsByUserIdAndStatus(Long userId, String status) {
+        return notificationDao.findByUserIdAndStatus(userId, status);
+    }
+
+    /**
+     * エンティティ関連の通知作成
+     */
+    public Notification createNotificationWithEntity(Long userId, String title, String message,
+            String notificationType, Long relatedEntityId, String relatedEntityType) {
+        Notification notification = new Notification(userId, title, message, notificationType);
+        notification.setCreatedAt(LocalDateTime.now());
+        notification.setUpdatedAt(LocalDateTime.now());
+        // エンティティ情報はメッセージに含める
+        String entityInfo = String.format(" (関連エンティティ: %s, ID: %d)", relatedEntityType, relatedEntityId);
+        notification.setMessage(message + entityInfo);
+        return notificationDao.save(notification);
+    }
+
+    /**
+     * 優先度付き通知作成
+     */
+    public Notification createPriorityNotification(Long userId, String title, String message,
+            String notificationType, String priority) {
+        Notification notification = new Notification(userId, title, message, notificationType);
+        notification.setStatus(priority); // 優先度をステータスとして使用
+        notification.setCreatedAt(LocalDateTime.now());
+        notification.setUpdatedAt(LocalDateTime.now());
+        return notificationDao.save(notification);
+    }
+
+    /**
+     * スケジュール通知作成
+     */
+    public Notification createScheduledNotification(Long userId, String title, String message,
+            String notificationType, LocalDateTime scheduledAt) {
+        Notification notification = new Notification(userId, title, message, notificationType);
+        notification.setStatus("SCHEDULED");
+        notification.setCreatedAt(LocalDateTime.now());
+        notification.setUpdatedAt(LocalDateTime.now());
+        // スケジュール情報はメッセージに含める
+        String scheduleInfo = String.format(" (予定日時: %s)", scheduledAt);
+        notification.setMessage(message + scheduleInfo);
+        return notificationDao.save(notification);
+    }
+
+    /**
+     * ユーザーの既読/未読通知取得
+     */
     public List<Notification> getUserNotificationsByReadStatus(Long userId, boolean isRead) {
-        return notificationDao.findByUserIdAndIsRead(userId, isRead);
+        List<Notification> allNotifications = notificationDao.findByUserId(userId);
+        return allNotifications.stream()
+                .filter(n -> n.isRead() == isRead)
+                .collect(Collectors.toList());
     }
 
-    public List<Notification> getNotificationsByType(String notificationType) {
-        return notificationDao.findByNotificationType(notificationType);
-    }
-
+    /**
+     * 優先度別通知取得
+     */
     public List<Notification> getNotificationsByPriority(String priority) {
-        return notificationDao.findByPriority(priority);
+        List<Notification> allNotifications = notificationDao.findAll();
+        return allNotifications.stream()
+                .filter(n -> priority.equals(n.getStatus()))
+                .collect(Collectors.toList());
     }
 
+    /**
+     * 関連エンティティ別通知取得
+     */
     public List<Notification> getNotificationsByRelatedEntity(Long relatedEntityId, String relatedEntityType) {
-        return notificationDao.findByRelatedEntityIdAndRelatedEntityType(relatedEntityId, relatedEntityType);
+        List<Notification> allNotifications = notificationDao.findAll();
+        String searchText = String.format("関連エンティティ: %s, ID: %d", relatedEntityType, relatedEntityId);
+        return allNotifications.stream()
+                .filter(n -> n.getMessage() != null && n.getMessage().contains(searchText))
+                .collect(Collectors.toList());
     }
 
+    /**
+     * スケジュール通知取得
+     */
     public List<Notification> getScheduledNotifications() {
-        return notificationDao.findScheduledNotifications(LocalDateTime.now());
+        List<Notification> allNotifications = notificationDao.findAll();
+        return allNotifications.stream()
+                .filter(n -> "SCHEDULED".equals(n.getStatus()))
+                .collect(Collectors.toList());
     }
 
-    // 統計メソッド
+    /**
+     * ユーザー別通知数取得
+     */
     public long getNotificationCountByUser(Long userId) {
-        return notificationDao.countByUserId(userId);
+        return notificationDao.findByUserId(userId).size();
     }
 
+    /**
+     * ユーザー別未読通知数取得
+     */
     public long getUnreadNotificationCountByUser(Long userId) {
-        return notificationDao.countUnreadByUserId(userId);
+        return notificationDao.findByUserIdAndReadFalse(userId).size();
     }
 
+    /**
+     * 通知タイプ別通知数取得
+     */
     public long getNotificationCountByType(String notificationType) {
-        return notificationDao.countByNotificationType(notificationType);
+        return notificationDao.findByType(notificationType).size();
     }
 
     /**
@@ -165,10 +234,14 @@ public class NotificationService {
      */
     public void processScheduledNotifications() {
         List<Notification> scheduledNotifications = getScheduledNotifications();
+        LocalDateTime now = LocalDateTime.now();
         for (Notification notification : scheduledNotifications) {
-            // ここで実際の通知送信処理を行う
-            // 例: メール送信、プッシュ通知など
-            System.out.println("スケジュール通知送信: " + notification.getTitle() + " to user " + notification.getUserId());
+            // スケジュール時刻が過ぎた通知を処理
+            if (notification.getCreatedAt() != null && notification.getCreatedAt().isBefore(now)) {
+                notification.setStatus("SENT");
+                notification.setUpdatedAt(now);
+                notificationDao.save(notification);
+            }
         }
     }
-} 
+}

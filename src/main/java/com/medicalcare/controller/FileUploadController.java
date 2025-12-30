@@ -61,9 +61,7 @@ public class FileUploadController {
     public ResponseEntity<Resource> downloadFile(@PathVariable Long attachmentId) {
         try {
             // ファイル情報を取得（実際の実装では認証・認可チェックが必要）
-            ApplicationAttachment attachment = fileUploadService.getAttachmentsByApplicationId(attachmentId).stream()
-                .filter(a -> a.getId().equals(attachmentId))
-                .findFirst()
+            ApplicationAttachment attachment = fileUploadService.getFileById(attachmentId)
                 .orElseThrow(() -> new RuntimeException("ファイルが見つかりません"));
             
             Path filePath = Paths.get(attachment.getFilePath());

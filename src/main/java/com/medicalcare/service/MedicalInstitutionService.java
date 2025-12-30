@@ -8,10 +8,11 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class MedicalInstitutionService {
-    
+
     @Autowired
     private MedicalInstitutionDao medicalInstitutionDao;
 
@@ -30,66 +31,91 @@ public class MedicalInstitutionService {
     }
 
     /**
-     * 機関コードによる医療機関取得
+     * 医療機関コードによる取得
      */
     public Optional<MedicalInstitution> getMedicalInstitutionByCode(String institutionCode) {
-        return medicalInstitutionDao.findByInstitutionCode(institutionCode);
+        return medicalInstitutionDao.findAll().stream()
+                .filter(inst -> institutionCode.equals(inst.getInstitutionCode()))
+                .findFirst();
     }
 
     /**
-     * 機関種別による医療機関一覧取得
+     * 医療機関番号による取得
+     */
+    public Optional<MedicalInstitution> getMedicalInstitutionByNumber(String institutionNumber) {
+        return medicalInstitutionDao.findByInstitutionNumber(institutionNumber);
+    }
+
+    /**
+     * 医療機関名による検索
+     */
+    public List<MedicalInstitution> searchMedicalInstitutionsByName(String name) {
+        return medicalInstitutionDao.findAll().stream()
+                .filter(inst -> inst.getInstitutionName() != null && inst.getInstitutionName().contains(name))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 機関種別による医療機関取得
      */
     public List<MedicalInstitution> getMedicalInstitutionsByType(String institutionType) {
-        return medicalInstitutionDao.findByInstitutionType(institutionType);
+        return medicalInstitutionDao.findAll().stream()
+                .filter(inst -> institutionType.equals(inst.getInstitutionType()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 都道府県による検索
+     */
+    public List<MedicalInstitution> getMedicalInstitutionsByPrefecture(String prefecture) {
+        return medicalInstitutionDao.findByPrefecture(prefecture);
     }
 
     /**
      * 医療機関作成
      */
-    public MedicalInstitution createMedicalInstitution(String institutionCode, String institutionName, 
-                                                      String institutionType, String address, String phone, 
-                                                      String email, String representativeName, String licenseNumber) {
-        // 機関コードの重複チェック
-        if (medicalInstitutionDao.existsByInstitutionCode(institutionCode)) {
-            throw new RuntimeException("機関コードが既に使用されています: " + institutionCode);
+    public MedicalInstitution createMedicalInstitution(String institutionCode, String institutionName,
+            String institutionType, String address, String phone, String email, String representativeName,
+            String licenseNumber) {
+        // 医療機関コードの重複チェック
+        Optional<MedicalInstitution> existing = getMedicalInstitutionByCode(institutionCode);
+        if (existing.isPresent()) {
+            throw new RuntimeException("医療機関コードが既に使用されています: " + institutionCode);
         }
-        
-        MedicalInstitution newInstitution = new MedicalInstitution(institutionCode, institutionName, institutionType);
-        newInstitution.setAddress(address);
-        newInstitution.setPhone(phone);
-        newInstitution.setEmail(email);
-        newInstitution.setRepresentativeName(representativeName);
-        newInstitution.setLicenseNumber(licenseNumber);
-        newInstitution.setCreatedAt(LocalDateTime.now());
-        
-        return medicalInstitutionDao.save(newInstitution);
+
+        MedicalInstitution institution = new MedicalInstitution();
+        institution.setInstitutionCode(institutionCode);
+        institution.setInstitutionName(institutionName);
+        institution.setInstitutionType(institutionType);
+        institution.setAddress(address);
+        institution.setPhone(phone);
+        institution.setEmail(email);
+        institution.setRepresentativeName(representativeName);
+        institution.setLicenseNumber(licenseNumber);
+        institution.setCreatedAt(LocalDateTime.now());
+        institution.setUpdatedAt(LocalDateTime.now());
+
+        return medicalInstitutionDao.save(institution);
     }
 
     /**
      * 医療機関更新
      */
     public MedicalInstitution updateMedicalInstitution(Long id, String institutionName, String institutionType,
-                                                      String address, String phone, String email, 
-                                                      String representativeName, String licenseNumber) {
-        Optional<MedicalInstitution> existing = medicalInstitutionDao.findById(id);
-        if (existing.isPresent()) {
-            MedicalInstitution current = existing.get();
-            
-            MedicalInstitution updated = new MedicalInstitution(
-                current.getInstitutionCode(),
-                institutionName,
-                institutionType
-            );
-            updated.setId(current.getId());
-            updated.setAddress(address);
-            updated.setPhone(phone);
-            updated.setEmail(email);
-            updated.setRepresentativeName(representativeName);
-            updated.setLicenseNumber(licenseNumber);
-            updated.setCreatedAt(current.getCreatedAt());
-            updated.setUpdatedAt(LocalDateTime.now());
-            
-            return medicalInstitutionDao.save(updated);
+            String address, String phone, String email, String representativeName, String licenseNumber) {
+        Optional<MedicalInstitution> institutionOpt = medicalInstitutionDao.findById(id);
+        if (institutionOpt.isPresent()) {
+            MedicalInstitution institution = institutionOpt.get();
+            institution.setInstitutionName(institutionName);
+            institution.setInstitutionType(institutionType);
+            institution.setAddress(address);
+            institution.setPhone(phone);
+            institution.setEmail(email);
+            institution.setRepresentativeName(representativeName);
+            institution.setLicenseNumber(licenseNumber);
+            institution.setUpdatedAt(LocalDateTime.now());
+
+            return medicalInstitutionDao.save(institution);
         } else {
             throw new RuntimeException("医療機関が見つかりません: " + id);
         }
@@ -99,11 +125,11 @@ public class MedicalInstitutionService {
      * 医療機関削除
      */
     public void deleteMedicalInstitution(Long id) {
-        Optional<MedicalInstitution> existing = medicalInstitutionDao.findById(id);
-        if (existing.isPresent()) {
-            medicalInstitutionDao.delete(existing.get());
+        Optional<MedicalInstitution> institutionOpt = medicalInstitutionDao.findById(id);
+        if (institutionOpt.isPresent()) {
+            medicalInstitutionDao.delete(institutionOpt.get());
         } else {
             throw new RuntimeException("医療機関が見つかりません: " + id);
         }
     }
-} 
+}

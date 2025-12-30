@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,147 +14,198 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class FileUploadService {
-    
+
     @Autowired
     private ApplicationAttachmentDao attachmentDao;
-    
-    private static final String UPLOAD_DIR = "/app/uploads";
-    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-    private static final String[] ALLOWED_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx"};
+
+    private static final String UPLOAD_DIR = "uploads/";
 
     /**
-     * ファイルアップロード
+     * ファイルアップロード（旧シグネチャ - 後方互換性のため保持）
      */
-    public ApplicationAttachment uploadFile(MultipartFile file, Long applicationId, String uploadType, 
-                                          String description, Long uploadedByUserId) throws IOException {
-        // ファイルサイズチェック
-        if (file.getSize() > MAX_FILE_SIZE) {
-            throw new RuntimeException("ファイルサイズが上限を超えています: " + file.getSize() + " bytes");
-        }
-        
-        // ファイル拡張子チェック
+    public ApplicationAttachment uploadFile(Long applicationId, MultipartFile file, Long uploadedByUserId)
+            throws IOException {
+        return uploadFile(file, applicationId, "MANUAL", null, uploadedByUserId);
+    }
+
+    /**
+     * ファイルアップロード（新シグネチャ）
+     */
+    public ApplicationAttachment uploadFile(MultipartFile file, Long applicationId, String uploadType,
+            String description, Long uploadedByUserId) throws IOException {
+        // ファイル名の生成
         String originalFileName = file.getOriginalFilename();
-        if (!isValidFileExtension(originalFileName)) {
-            throw new RuntimeException("許可されていないファイル形式です: " + originalFileName);
-        }
-        
-        // ファイル名の生成（UUID + 元の拡張子）
         String fileExtension = getFileExtension(originalFileName);
         String fileName = UUID.randomUUID().toString() + fileExtension;
-        
+
         // アップロードディレクトリの作成
         Path uploadPath = Paths.get(UPLOAD_DIR);
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }
-        
+
         // ファイルの保存
         Path filePath = uploadPath.resolve(fileName);
         Files.copy(file.getInputStream(), filePath);
-        
+
         // データベースに記録
         ApplicationAttachment attachment = new ApplicationAttachment(
-            applicationId, fileName, originalFileName, filePath.toString(), uploadType, uploadedByUserId
-        );
+                applicationId, fileName, originalFileName, filePath.toString(), file.getSize(), file.getContentType());
+        attachment.setUploadedBy(uploadedByUserId);
         attachment.setDescription(description);
-        attachment.setFileType(fileExtension);
-        attachment.setFileSize(file.getSize());
-        
+        attachment.setUploadedAt(LocalDateTime.now());
+
         return attachmentDao.save(attachment);
     }
 
     /**
      * ファイル削除
      */
-    public void deleteFile(Long attachmentId) {
+    public void deleteFile(Long attachmentId) throws IOException {
         Optional<ApplicationAttachment> attachmentOpt = attachmentDao.findById(attachmentId);
         if (attachmentOpt.isPresent()) {
             ApplicationAttachment attachment = attachmentOpt.get();
-            
-            // 物理ファイルの削除
-            try {
-                Path filePath = Paths.get(attachment.getFilePath());
-                Files.deleteIfExists(filePath);
-            } catch (IOException e) {
-                // ファイル削除エラーはログに記録するが、処理は続行
-                System.err.println("ファイル削除エラー: " + e.getMessage());
+
+            // ファイルシステムから削除
+            Path filePath = Paths.get(attachment.getFilePath());
+            if (Files.exists(filePath)) {
+                Files.delete(filePath);
             }
-            
+
             // データベースから削除
             attachmentDao.delete(attachment);
         } else {
-            throw new RuntimeException("添付ファイルが見つかりません: " + attachmentId);
+            throw new RuntimeException("ファイルが見つかりません: " + attachmentId);
         }
+    }
+
+    /**
+     * 申請IDによるファイル取得
+     */
+    public List<ApplicationAttachment> getFilesByApplicationId(Long applicationId) {
+        return attachmentDao.findByApplicationId(applicationId);
+    }
+
+    /**
+     * ファイルIDによる取得
+     */
+    public Optional<ApplicationAttachment> getFileById(Long attachmentId) {
+        return attachmentDao.findById(attachmentId);
+    }
+
+    /**
+     * ファイル名による検索
+     */
+    public List<ApplicationAttachment> searchFilesByFileName(String fileName) {
+        return attachmentDao.findByFileNameContaining(fileName);
+    }
+
+    /**
+     * コンテンツタイプによる検索
+     */
+    public List<ApplicationAttachment> getFilesByContentType(String contentType) {
+        return attachmentDao.findByApplicationIdAndContentType(null, contentType);
+    }
+
+    /**
+     * ファイルサイズによる検索（指定サイズ以上）
+     */
+    public List<ApplicationAttachment> getFilesBySizeGreaterThan(Long fileSize) {
+        return attachmentDao.findByFileSizeGreaterThan(fileSize);
+    }
+
+    /**
+     * 全ファイル取得
+     */
+    public List<ApplicationAttachment> getAllFiles() {
+        return attachmentDao.findAll();
+    }
+
+    /**
+     * 申請IDによる添付ファイル取得（エイリアス）
+     */
+    public List<ApplicationAttachment> getAttachmentsByApplicationId(Long applicationId) {
+        return getFilesByApplicationId(applicationId);
+    }
+
+    /**
+     * アップロードタイプによる添付ファイル取得
+     */
+    public List<ApplicationAttachment> getAttachmentsByUploadType(String uploadType) {
+        List<ApplicationAttachment> allAttachments = attachmentDao.findAll();
+        return allAttachments.stream()
+                .filter(att -> att.getDescription() != null && att.getDescription().contains("uploadType:" + uploadType))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 検証ステータスによる添付ファイル取得
+     */
+    public List<ApplicationAttachment> getAttachmentsByVerificationStatus(String verificationStatus) {
+        List<ApplicationAttachment> allAttachments = attachmentDao.findAll();
+        return allAttachments.stream()
+                .filter(att -> att.getDescription() != null && 
+                        att.getDescription().contains("verificationStatus:" + verificationStatus))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * ファイルタイプによる添付ファイル取得
+     */
+    public List<ApplicationAttachment> getAttachmentsByFileType(String fileType) {
+        return getFilesByContentType(fileType);
+    }
+
+    /**
+     * 申請IDによる添付ファイル数取得
+     */
+    public long getAttachmentCountByApplicationId(Long applicationId) {
+        return getFilesByApplicationId(applicationId).size();
+    }
+
+    /**
+     * 検証ステータスによる添付ファイル数取得
+     */
+    public long getAttachmentCountByVerificationStatus(String verificationStatus) {
+        return getAttachmentsByVerificationStatus(verificationStatus).size();
+    }
+
+    /**
+     * ファイルタイプによる添付ファイル数取得
+     */
+    public long getAttachmentCountByFileType(String fileType) {
+        return getAttachmentsByFileType(fileType).size();
     }
 
     /**
      * ファイル検証
      */
-    public ApplicationAttachment verifyFile(Long attachmentId, String verificationStatus, 
-                                          String verificationComments, Long verifiedByUserId) {
+    public ApplicationAttachment verifyFile(Long attachmentId, String verificationStatus, String comments,
+            Long verifiedByUserId) {
         Optional<ApplicationAttachment> attachmentOpt = attachmentDao.findById(attachmentId);
         if (attachmentOpt.isPresent()) {
             ApplicationAttachment attachment = attachmentOpt.get();
-            attachment.setVerificationStatus(verificationStatus);
-            attachment.setVerificationComments(verificationComments);
-            attachment.setVerifiedByUserId(verifiedByUserId);
-            attachment.setVerifiedAt(LocalDateTime.now());
-            attachment.setVerified("VERIFIED".equals(verificationStatus));
-            attachment.setUpdatedAt(LocalDateTime.now());
-            
+            String currentDesc = attachment.getDescription() != null ? attachment.getDescription() : "";
+            String newDesc = currentDesc + "\n[検証] ステータス: " + verificationStatus + ", コメント: " + comments +
+                    ", 検証者ID: " + verifiedByUserId;
+            attachment.setDescription(newDesc);
             return attachmentDao.save(attachment);
         } else {
-            throw new RuntimeException("添付ファイルが見つかりません: " + attachmentId);
+            throw new RuntimeException("ファイルが見つかりません: " + attachmentId);
         }
     }
 
-    // 検索メソッド
-    public List<ApplicationAttachment> getAttachmentsByApplicationId(Long applicationId) {
-        return attachmentDao.findByApplicationId(applicationId);
-    }
-
-    public List<ApplicationAttachment> getAttachmentsByUploadType(String uploadType) {
-        return attachmentDao.findByUploadType(uploadType);
-    }
-
-    public List<ApplicationAttachment> getAttachmentsByVerificationStatus(String verificationStatus) {
-        return attachmentDao.findByVerificationStatus(verificationStatus);
-    }
-
-    public List<ApplicationAttachment> getAttachmentsByFileType(String fileType) {
-        return attachmentDao.findByFileType(fileType);
-    }
-
-    // 統計メソッド
-    public long getAttachmentCountByApplicationId(Long applicationId) {
-        return attachmentDao.countByApplicationId(applicationId);
-    }
-
-    public long getAttachmentCountByVerificationStatus(String verificationStatus) {
-        return attachmentDao.countByVerificationStatus(verificationStatus);
-    }
-
-    public long getAttachmentCountByFileType(String fileType) {
-        return attachmentDao.countByFileType(fileType);
-    }
-
-    // ユーティリティメソッド
-    private boolean isValidFileExtension(String fileName) {
-        if (fileName == null) return false;
-        String extension = getFileExtension(fileName).toLowerCase();
-        for (String allowed : ALLOWED_EXTENSIONS) {
-            if (allowed.equals(extension)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
+    /**
+     * ファイル拡張子を取得
+     */
     private String getFileExtension(String fileName) {
-        int lastDotIndex = fileName.lastIndexOf('.');
-        return lastDotIndex > 0 ? fileName.substring(lastDotIndex) : "";
+        if (fileName == null || fileName.lastIndexOf(".") == -1) {
+            return "";
+        }
+        return fileName.substring(fileName.lastIndexOf("."));
     }
-} 
+}

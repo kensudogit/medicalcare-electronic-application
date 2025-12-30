@@ -6,46 +6,47 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "application_workflows")
 public class ApplicationWorkflow {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @Column(name = "application_id", nullable = false)
     private Long applicationId;
-    
+
     @Column(name = "current_status", nullable = false)
     private String currentStatus; // DRAFT, SUBMITTED, UNDER_REVIEW, APPROVED, REJECTED
-    
+
     @Column(name = "previous_status")
     private String previousStatus;
-    
+
     @Column(name = "assigned_to_user_id")
     private Long assignedToUserId; // 担当者ID
-    
+
     @Column(name = "comments", columnDefinition = "TEXT")
     private String comments;
-    
+
     @Column(name = "status_changed_at")
     private LocalDateTime statusChangedAt;
-    
+
     @Column(name = "changed_by_user_id")
     private Long changedByUserId; // ステータス変更者ID
-    
+
     @Column(name = "workflow_type")
     private String workflowType; // ワークフロータイプ
-    
+
     @Column(name = "step_number")
     private Integer stepNumber; // 現在のステップ番号
-    
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
-    
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     // デフォルトコンストラクタ
-    public ApplicationWorkflow() {}
+    public ApplicationWorkflow() {
+    }
 
     // コンストラクタ
     public ApplicationWorkflow(Long applicationId, String currentStatus) {
@@ -150,4 +151,4 @@ public class ApplicationWorkflow {
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
     }
-} 
+}
