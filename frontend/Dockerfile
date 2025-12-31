@@ -51,7 +51,7 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
-ENV NODE_OPTIONS="--max-old-space-size=1024 --optimize-for-size"
+ENV NODE_OPTIONS="--max-old-space-size=1024"
 
 # ヘルスチェック
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
