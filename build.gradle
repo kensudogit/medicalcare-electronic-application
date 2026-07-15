@@ -11,7 +11,7 @@ version = '0.0.1-SNAPSHOT'
 
 // Javaバージョン設定
 java {
-    sourceCompatibility = '17'  // Java 17を使用
+    sourceCompatibility = '21'  // Java 17を使用
 }
 
 // コンパイル設定

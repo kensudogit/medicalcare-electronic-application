@@ -41,8 +41,8 @@ spring:
   # ファイルアップロード設定
   servlet:
     multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+      max-file-size: 100MB
+      max-request-size: 120MB
       enabled: true
 
 # サーバー設定
@@ -68,4 +68,35 @@ management:
       base-path: /actuator
   endpoint:
     health:
-      show-details: when-authorized 
+      show-details: when-authorized
+
+# 医療画像AIサービス（FastAPI）
+ai:
+  imaging:
+    base-url: ${AI_IMAGING_BASE_URL:http://ai-imaging:8090}
+
+security:
+  phi:
+    pepper: ${PHI_PEPPER:medicalcare-phi-pepper-change-me-in-production}
+  encryption:
+    enabled: ${ENCRYPTION_ENABLED:true}
+    key-base64: ${ENCRYPTION_KEY_BASE64:}
+
+# PACS / 電子カルテ連携
+integration:
+  pacs:
+    enabled: ${INTEGRATION_PACS_ENABLED:false}
+    ae-title: MEDICALCARE_SCU
+    remote-host: ${INTEGRATION_PACS_HOST:localhost}
+    remote-port: ${INTEGRATION_PACS_PORT:11112}
+    dicomweb-base-url: ${DICOMWEB_BASE_URL:}
+  ehr:
+    enabled: ${INTEGRATION_EHR_ENABLED:false}
+    base-url: ${INTEGRATION_EHR_BASE_URL:http://localhost:8089/fhir}
+    system: MedicalCareImaging
+
+file:
+  upload:
+    max-size: 100MB
+    allowed-types: pdf,doc,docx,jpg,jpeg,png,bmp,tif,tiff,webp,dcm,dicom
+    upload-dir: ./uploads

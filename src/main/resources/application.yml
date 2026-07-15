@@ -20,6 +20,11 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect  # PostgreSQL方言
         format_sql: true  # SQLフォーマット有効
+
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 120MB
         
 # サーバー設定
 server:
@@ -53,6 +58,42 @@ jwt:
 # ファイルアップロード設定
 file:
   upload:
-    max-size: 10MB  # 最大ファイルサイズ
-    allowed-types: pdf,doc,docx,jpg,jpeg,png  # 許可ファイル形式
-    upload-dir: ./uploads  # アップロードディレクトリ 
+    max-size: 100MB  # 最大ファイルサイズ（医療画像・DICOM対応）
+    allowed-types: pdf,doc,docx,jpg,jpeg,png,bmp,tif,tiff,webp,dcm,dicom  # 許可ファイル形式
+    upload-dir: ./uploads  # アップロードディレクトリ
+
+# 医療画像AIサービス（FastAPI）
+ai:
+  imaging:
+    base-url: http://localhost:8090
+
+# セキュリティ・PHI・暗号化
+security:
+  phi:
+    pepper: ${PHI_PEPPER:medicalcare-phi-pepper-change-me-in-production}
+  encryption:
+    enabled: true
+    # 本番では必ず固定の Base64(AES-256キー) を設定
+    key-base64: ${ENCRYPTION_KEY_BASE64:}
+
+# PACS / 電子カルテ連携
+integration:
+  pacs:
+    enabled: false
+    ae-title: MEDICALCARE_SCU
+    remote-host: localhost
+    remote-port: 11112
+    dicomweb-base-url: ${DICOMWEB_BASE_URL:}
+  ehr:
+    enabled: false
+    base-url: http://localhost:8089/fhir
+    system: MedicalCareImaging
+
+# TLS（通信暗号化）はリバースプロキシ / ロードバランサで終端することを推奨
+# server.ssl を有効化する場合の例:
+# server:
+#   ssl:
+#     enabled: true
+#     key-store: classpath:keystore.p12
+#     key-store-password: changeit
+#     key-store-type: PKCS12

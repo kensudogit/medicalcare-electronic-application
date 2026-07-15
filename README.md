@@ -10,6 +10,12 @@
 - 申請の承認・却下ワークフロー
 - 申請状況の追跡・確認
 
+### 医療画像AI認識パッケージ
+- X線 / CT / MRI / 超音波 / 内視鏡 / 病理 / DICOM 対応
+- 自社AI・SageMaker・Azure AI・Google Cloud・外部医療AI API
+- 画像アップロード、DICOM表示、病変検出、分類、枠表示、所見生成、PACS/電子カルテ連携
+- 詳細は [IMAGING_AI_PACKAGE.md](./IMAGING_AI_PACKAGE.md)
+
 ### 新規追加機能
 - **ユーザー認証・認可システム**
   - ロールベースアクセス制御（ADMIN, INSTITUTION_ADMIN, USER）

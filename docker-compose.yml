@@ -95,12 +95,16 @@ services:
       SERVER_TOMCAT_THREADS_MIN_SPARE: 10
       SERVER_TOMCAT_ACCEPT_COUNT: 100
       SERVER_TOMCAT_MAX_CONNECTIONS: 8192
+      # 医療画像AIサービス
+      AI_IMAGING_BASE_URL: http://ai-imaging:8090
     ports:
       - "8081:8080"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      ai-imaging:
         condition: service_healthy
     networks:
       - medicalcare-network
@@ -119,6 +123,36 @@ services:
         limits:
           memory: 2G
           cpus: '2.0'
+
+  # FastAPI 医療画像AI認識サービス
+  ai-imaging:
+    build:
+      context: ./ai-imaging-service
+      dockerfile: Dockerfile
+    container_name: medicalcare-ai-imaging
+    environment:
+      AI_DEFAULT_PROVIDER: inhouse
+      AI_ENABLE_MOCK_INFERENCE: "true"
+      AI_UPLOAD_DIR: /app/uploads/ai-imaging
+      AI_PREVIEW_DIR: /app/uploads/ai-imaging/previews
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./uploads/ai-imaging:/app/uploads/ai-imaging
+    networks:
+      - medicalcare-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
 
   # Next.jsフロントエンドサービス（性能最適化）
   frontend:
@@ -165,6 +199,7 @@ services:
     depends_on:
       - frontend
       - backend
+      - ai-imaging
     networks:
       - medicalcare-network
     restart: unless-stopped
